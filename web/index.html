@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <title>VERTO · Text-to-SQL console</title>
+  <meta name="description" content="Ask a question about a Spider database in plain English and see the SQL a fine-tuned T5 model writes, the rows it returns and how many attempts it took." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d97706'/%3E%3Cg fill='none' stroke='%23141415' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='7' y='8' width='18' height='16' rx='2.5'/%3E%3Cpath d='M7 13.5h18'/%3E%3Cpath d='M13.5 13.5V24'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/static/style.css?v=4" />
+</head>
+<body>
+
+<!-- Icons: lucide, ISC licence -->
+<svg width="0" height="0" class="sprite" aria-hidden="true">
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3.5" width="14" height="13" rx="2.5"/><path d="M3 8h14"/><path d="M8 8v8.5"/></svg>
+      <span class="brand-name">VERTO</span>
+      <span class="brand-desc">Text-to-SQL with retries on SQLite errors</span>
+    </div>
+    <div class="topbar-meta">
+      <span class="runtime-info" id="runtime-info"></span>
+      <span class="status" id="header-status" role="status" aria-live="polite">
+        <span class="status-dot" id="status-dot" aria-hidden="true"></span>
+        <span id="status-text">Connecting…</span>
+      </span>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+
+  <aside class="sidebar">
+
+    <section class="panel" aria-labelledby="query-title">
+      <h2 class="panel-title" id="query-title">Query</h2>
+      <div class="field">
+        <label for="db-select" class="field-label">Database</label>
+        <select id="db-select">
+          <option value="" disabled selected>Loading databases…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="question-input" class="field-label">Question</label>
+        <textarea
+          id="question-input"
+          rows="3"
+          placeholder="For example: How many singers are older than 30?"
+          autocomplete="off"
+          spellcheck="false"
+          aria-describedby="question-hint"
+        ></textarea>
+        <p class="hint" id="question-hint"><span class="visually-hidden">Shortcut: </span><kbd id="shortcut-mod">Ctrl</kbd><kbd>Enter</kbd><span class="hint-text">to run</span></p>
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="submit-btn" disabled>
+        <span class="btn-spinner" aria-hidden="true"></span>
+        <span id="btn-label">Run query</span>
+      </button>
+    </section>
+
+    <section class="panel" aria-labelledby="pipeline-title">
+      <h2 class="panel-title" id="pipeline-title">Pipeline</h2>
+      <label class="check"><input type="checkbox" id="toggle-schema" checked aria-describedby="schema-help" />Schema linking</label>
+      <p class="help check-help" id="schema-help">Only the most relevant tables go into the prompt</p>
+      <label class="check"><input type="checkbox" id="toggle-recovery" checked aria-describedby="recovery-help" />Error recovery</label>
+      <p class="help check-help" id="recovery-help">If SQLite rejects the top query, the model's other 4 candidates run in order</p>
+    </section>
+
+    <section class="panel" aria-labelledby="session-title">
+      <h2 class="panel-title" id="session-title">Session</h2>
+      <dl class="stats">
+        <div class="stat"><dt>Queries</dt><dd id="stat-queries">0</dd></div>
+        <div class="stat"><dt>Ran without error</dt><dd id="stat-success">—</dd></div>
+        <div class="stat"><dt>Avg. time</dt><dd id="stat-avg-time">—</dd></div>
+        <div class="stat"><dt>Databases</dt><dd id="stat-dbs">—</dd></div>
+      </dl>
+    </section>
+
+  </aside>
+
+  <div class="content">
+
+    <section class="panel result" id="result-panel" aria-labelledby="result-title">
+      <h2 class="panel-title" id="result-title">Result</h2>
+      <p class="empty placeholder" id="result-placeholder">Pick a database and ask a question to see the SQL the model writes and the rows it returns</p>
+
+      <div class="hidden" id="result-content">
+        <div class="summary" id="result-meta" aria-live="polite"></div>
+        <p class="alert hidden" id="result-alert" role="alert"></p>
+
+        <section class="subsection" id="sql-section" aria-labelledby="sql-title">
+          <div class="subsection-head">
+            <h3 class="subsection-title" id="sql-title">Generated SQL</h3>
+            <button type="button" class="btn btn-quiet" id="copy-sql-btn">
+              <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span id="copy-label">Copy</span>
+            </button>
+          </div>
+          <pre class="sql" id="sql-output"></pre>
+        </section>
+
+        <section class="subsection" id="rows-section" aria-labelledby="rows-title">
+          <h3 class="subsection-title" id="rows-title">Rows</h3>
+          <div id="result-body"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="history-title">
+      <h2 class="panel-title" id="history-title">History</h2>
+      <div id="history-list"></div>
+    </section>
+
+  </div>
+
+</main>
+
+<script src="/static/app.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "questions": 1034,
+  "execution_accuracy": 57.9,
+  "exact_match": 34.9,
+  "sql_error_rate": 12.7,
+  "first_attempt_failures": 246,
+  "ran_after_retry": 115,
+  "right_after_retry": 47,
+  "gold_sql_errors": 0,
+  "seconds_per_question_median": 1.24,
+  "seconds_per_question_p90": 2.62,
+  "schema_linking_token_cut_median": 18.9,
+  "schema_linking_token_cut_mean": 19.4,
+  "eval_minutes": 26.3,
+  "run": {
+    "date": "2026-11-17",
+    "device": "NVIDIA L4",
+    "schema_linking": true,
+    "error_recovery": "next beam-search candidates",
+    "torch": "2.15.0+cu132",
+    "transformers": "5.23.0",
+    "peft": "0.21.3",
+    "training": null
+  }
+}

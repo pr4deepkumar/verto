@@ -1,0 +1,11 @@
+# terraform/terraform.tfvars.example
+# Copy to terraform.tfvars and set allowed_cidr to your own address
+
+aws_region     = "us-east-1"
+instance_type  = "t3.xlarge"      # 16 GB of memory; g4dn.xlarge for a GPU, with ami_id set
+allowed_cidr   = "203.0.113.4/32" # your IP: curl -s https://checkip.amazonaws.com
+verto_port     = 8000
+key_name       = ""
+root_volume_gb = 40
+ami_id         = ""               # an AWS Deep Learning AMI for GPU instance types
+checkpoint_url = ""               # where best_model.pt can be downloaded from, if anywhere

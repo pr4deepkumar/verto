@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Secrets and local settings
+.env
+
+# OS-specific files
+.DS_Store
+
+# Project dataset & checkpoints (ignore downloaded files, keep folder structure)
+data/spider/*
+!data/spider/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+
+# Logs from scripts/gcp_run.sh
+logs/
+
+# Terraform state can hold secrets; terraform.tfvars holds your settings
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
